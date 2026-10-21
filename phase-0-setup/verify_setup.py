@@ -11,8 +11,8 @@ instructor grade it.
 
 Two small functions are left for YOU to implement (search for ``TODO``):
 
-  * ``parse_gcloud_config`` — pull the account + project out of ``gcloud`` JSON output.
-  * ``parse_repo_slug``     — turn a git remote URL into ``owner/repo``.
+- ``parse_gcloud_config`` — pull the account + project out of ``gcloud`` JSON output.
+- ``parse_repo_slug``     — turn a git remote URL into ``owner/repo``.
 
 Everything else is provided. These are pure functions (input string in, value out),
 so you can test them without touching the cloud — see ``tests/test_units.py``.
@@ -48,10 +48,17 @@ def parse_gcloud_config(raw: str) -> dict:
     Args:
         raw: the raw stdout string from the gcloud command (may be empty).
     """
-    # TODO: parse `raw` as JSON and return {"account": ..., "project": ...}
-    #       from the "core" section. Return empty strings if raw is empty or a
-    #       field is missing.
-    raise NotImplementedError("Phase 0: implement parse_gcloud_config()")
+    if not raw.strip():
+        return {"account": "", "project": ""}
+    try:
+        data = json.loads(raw)
+        core = data.get("core", {})
+        return {
+            "account": core.get("account", ""),
+            "project": core.get("project", "")
+        }
+    except json.JSONDecodeError:
+        return {"account": "", "project": ""}
 
 
 def parse_repo_slug(remote_url: str) -> str:
@@ -59,17 +66,24 @@ def parse_repo_slug(remote_url: str) -> str:
 
     Must handle both forms git prints:
 
-      * HTTPS: ``https://github.com/eurecom/clouds-lab.git``  -> ``eurecom/clouds-lab``
-      * SSH:   ``git@github.com:eurecom/clouds-lab.git``      -> ``eurecom/clouds-lab``
+- HTTPS: ``https://github.com/eurecom/clouds-lab.git``  -> ``eurecom/clouds-lab``
+- SSH:   ``git@github.com:eurecom/clouds-lab.git``      -> ``eurecom/clouds-lab``
 
     Return ``""`` if the URL is empty or not a github.com URL.
 
     Args:
         remote_url: output of ``git remote get-url origin`` (may be empty).
     """
-    # TODO: return "owner/repo" for both the HTTPS and SSH forms shown above.
-    #       Strip any trailing ".git". Return "" if not a github.com URL.
-    raise NotImplementedError("Phase 0: implement parse_repo_slug()")
+    url = remote_url.strip()
+    if url.endswith(".git"):
+        url = url[:-4]
+    
+    if "https://github.com/" in url:
+        return url.split("https://github.com/")[1]
+    elif "git@github.com:" in url:
+        return url.split("git@github.com:")[1]
+    
+    return ""
 
 
 # --------------------------------------------------------------------------- #
